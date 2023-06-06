@@ -1,0 +1,18 @@
+{
+  "name": "pki_backend",
+  "version": "1.0.0",
+  "description": "\"# PKI_projekt_backend\"",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mikołaj Rajczyk",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.1.4",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22",
+    "pg": "^8.11.0"
+  }
+}
