@@ -1,17 +1,22 @@
+const router = require('./routes')
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors')
 const app = express()
 const port = 3000
 
+const { Pool } = require('pg');
+require('dotenv').config();
+
+app.use(cors())
 app.use(bodyParser.json())
 app.use(
   bodyParser.urlencoded({
-    extended: true,
+    extended: false,
   })
 )
 
-const { Pool } = require('pg');
-require('dotenv').config();
+app.use('/', router)
 
 const { DATABASE_URL } = process.env;
 
@@ -33,3 +38,7 @@ async function getPostgresVersion() {
 }
 
 getPostgresVersion();
+
+app.listen(port, () => {
+  console.log('Listening at port ' + port);
+})
