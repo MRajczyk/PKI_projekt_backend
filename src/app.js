@@ -1,12 +1,13 @@
 const router = require('./routes')
 const express = require('express')
 const bodyParser = require('body-parser')
+const cookieParser = require("cookie-parser");
 const cors = require('cors')
 const app = express()
 const port = 3000
 
-const { Pool } = require('pg');
 require('dotenv').config();
+const pool = require('./util/db')
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -16,16 +17,8 @@ app.use(
   })
 )
 
+app.use(cookieParser());
 app.use('/', router)
-
-const { DATABASE_URL } = process.env;
-
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
 
 async function getPostgresVersion() {
   const client = await pool.connect();
@@ -36,7 +29,6 @@ async function getPostgresVersion() {
     client.release();
   }
 }
-
 getPostgresVersion();
 
 app.listen(port, () => {
