@@ -37,7 +37,7 @@ const generateTokens = (req, user) => {
 async function validateEmailAccessibility(email) {
     const client = await pool.connect();
     const res = await client.query('select COUNT(email) from "users" where email=$1', [email])
-    if(res.rows.rowCount > 0) {
+    if(res.rowCount > 0) {
         client.end()
         return false
     }
@@ -48,19 +48,23 @@ async function validateEmailAccessibility(email) {
 }
 
 async function createUser(req, res) {
-    if(req.body.email === undefined) {
-        res.status(422).json({
-            message: "Email wasn't provided",
-        })
-        return;
+    try {
+        if(!await validateEmailAccessibility(req.body.email)) {
+            res.status(409).json({
+                message: "Email is taken.",
+            });
+            return;
+        }
+        const createdUser = true //todo: userCreation in db
+        if(createdUser) {
+            res.status(200).json({
+                message: "The user was created.",
+            });
+        }
+    } catch (e) {
+        res.status(422).json({message: "Missing request parameters!"});
+        console.log(e.message);
     }
-    if(!validateEmailAccessibility(req.body.email)) {
-
-    }
-
-    res.status(200).json({
-        message: "The user was created",
-    });
 }
 
 module.exports.createUser = createUser
