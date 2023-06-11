@@ -25,7 +25,8 @@ async function getPostgresVersion() {
   try {
     const res = await client.query('SELECT version()');
     console.log(res.rows[0]);
-  } finally {
+  }
+  finally {
     client.release();
   }
 }

@@ -35,35 +35,42 @@ const generateTokens = (req, user) => {
 };
 
 async function validateEmailAccessibility(email) {
+    if(!email) {
+        throw new Error("Invalid param!")
+    }
+
     const client = await pool.connect();
     const res = await client.query('select COUNT(email) from "users" where email=$1', [email])
-    if(res.rowCount > 0) {
-        client.end()
-        return false
-    }
-    else {
-        client.end()
-        return true
-    }
+    const isEmailAccessible = res.rows[0].count === '0';
+    client.end()
+    return isEmailAccessible
 }
 
 async function createUser(req, res) {
     try {
         if(!await validateEmailAccessibility(req.body.email)) {
+            console.log('REQUEST createUser: email is taken!', req.body.email)
             res.status(409).json({
                 message: "Email is taken.",
             });
             return;
         }
-        const createdUser = true //todo: userCreation in db
-        if(createdUser) {
-            res.status(200).json({
-                message: "The user was created.",
+        try {
+            const client = await pool.connect();
+            await client.query('insert into Users(username, password, email, role) values ($1, $2, $3, \'user\')', [req.body.username, req.body.password, req.body.email])
+            client.end()
+        } catch (e) {
+            res.status(409).json({
+                message: "Error occured while creating user.",
             });
+            return;
         }
+        res.status(200).json({
+            message: "The user was created.",
+        });
     } catch (e) {
         res.status(422).json({message: "Missing request parameters!"});
-        console.log(e.message);
+        console.log('REQUEST createUser: params are missing!')
     }
 }
 
