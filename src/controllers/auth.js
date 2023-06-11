@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const pool = require('./../util/db')
 const SECRET_JWT = process.env.TOKEN_SECRET_JWT;
+const SALT_ROUNDS = 10
 
 const generateTokens = (req, user) => {
     const ACCESS_TOKEN = jwt.sign(
@@ -57,7 +58,7 @@ async function createUser(req, res) {
         }
         try {
             const client = await pool.connect();
-            await client.query('insert into Users(username, password, email, role) values ($1, $2, $3, \'user\')', [req.body.username, req.body.password, req.body.email])
+            await client.query('insert into Users(username, password, email, role) values ($1, $2, $3, \'user\')', [req.body.username, bcrypt.hashSync(req.body.password, SALT_ROUNDS), req.body.email])
             client.end()
         } catch (e) {
             res.status(409).json({
