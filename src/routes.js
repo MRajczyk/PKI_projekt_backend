@@ -2,7 +2,6 @@ const express = require('express')
 const router = express.Router()
 
 const auth = require('./controllers/auth')
-const users = require('./controllers/users')
 const { getUsers } = require("./controllers/users");
 
 router.use((req, res, next) => {
@@ -18,6 +17,6 @@ router.get('/register', auth.createUser)
 router.get('/login', auth.loginUser)
 
 //secure router
-router.get('/users/all', auth.accessTokenVerify, users.getUsers)
+router.get('/users/all', auth.accessTokenVerify, getUsers)
 
 module.exports = router
