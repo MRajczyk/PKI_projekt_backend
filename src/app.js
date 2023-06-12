@@ -1,7 +1,6 @@
 const router = require('./routes')
 const express = require('express')
 const bodyParser = require('body-parser')
-const cookieParser = require("cookie-parser");
 const cors = require('cors')
 const app = express()
 const port = 3000
@@ -18,7 +17,6 @@ app.use(
   })
 )
 
-app.use(cookieParser());
 app.use('/', router)
 
 async function getPostgresVersion() {

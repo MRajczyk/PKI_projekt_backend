@@ -1,7 +1,5 @@
-const jwt = require('jsonwebtoken')
 const pool = require('./../util/db')
 const collect = require('collect.js')
-const bcrypt = require("bcrypt");
 const util = require("./../util/util");
 
 const getUsers = async (req, res, next) => {

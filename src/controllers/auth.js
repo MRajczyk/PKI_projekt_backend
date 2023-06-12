@@ -104,7 +104,6 @@ const loginUser = async (req, res, next) => {
             res.status(401).json({
                 message: "Wrong credentials!",
             });
-            return;
         }
     } catch (e) {
         res.status(422).json({message: "Missing request parameters!"});
