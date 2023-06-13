@@ -10,8 +10,9 @@ router.get('/', (req, res) => {
   res.send('Hello world!')
 })
 
-router.get('/register', auth.createUser)
-router.get('/login', auth.loginUser)
+router.post('/register', auth.createUser)
+router.post('/login', auth.loginUser)
+router.post('/auth/refresh', auth.refreshTokenVerify);
 
 //secure router
 router.get('/users/all', auth.accessTokenVerify, getUsers)
