@@ -93,10 +93,15 @@ const loginUser = async (req, res, next) => {
                         return;
                     }
                     res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
+                    return;
                 }
                 else {
                     res.status(401).json('Wrong credentials!');
+                    return;
                 }
+            }
+            else {
+                res.status(401).json('Wrong credentials!');
             }
             client.end()
         } catch (e) {
