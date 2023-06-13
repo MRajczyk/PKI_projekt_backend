@@ -6,11 +6,6 @@ const { getUsers } = require("./controllers/users");
 const { handleQuery } = require("./controllers/queryHandler");
 const database = require("./controllers/database");
 
-router.use((req, res, next) => {
-  console.log('Time: ', Date.now())
-  next()
-})
-
 router.get('/', (req, res) => {
   res.send('Hello world!')
 })

@@ -11,7 +11,7 @@ const handleQuery = async (req, res, next) => {
         const client = await pool.connect();
         const result = await client.query(userQuery)
         client.end()
-        res.status(200).json({result: result.rows});
+        res.status(200).json({result: result});
     } catch (e) {
         console.log(e)
         res.status(409).json({
