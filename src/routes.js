@@ -9,7 +9,7 @@ const database = require("./controllers/database");
 router.get('/', (req, res) => {
   res.send('Hello world!')
 })
-//
+
 // router.use((req, res, next) => {
 //   console.log('Time: ', Date.now())
 //   next()
@@ -24,5 +24,6 @@ router.get('/users/all', auth.accessTokenVerify, getUsers)
 router.get('/query', auth.accessTokenVerify, handleQuery)
 router.get('/db', auth.accessTokenVerify, database.getCurrentDatabase)
 router.get('/db/tables', auth.accessTokenVerify, database.getAllTables)
+router.get('/db/table/:tableName', auth.accessTokenVerify, database.getInfoAboutTable)
 
 module.exports = router

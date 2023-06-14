@@ -90,29 +90,32 @@ const loginUser = async (req, res, next) => {
                 if(passwOk) {
                     if(!result.rows[0].accepted) {
                         res.status(403).json('Account is not verified!');
+                        client.release()
                         return;
                     }
                     res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
-                    return;
+                    client.release()
                 }
                 else {
                     res.status(401).json('Wrong credentials!');
-                    return;
+                    client.release()
                 }
             }
             else {
                 res.status(401).json('Wrong credentials!');
+                client.release()
             }
-            client.end()
         } catch (e) {
             console.log(e)
             res.status(401).json({
                 message: "Wrong credentials!",
             });
+            client.release()
         }
     } catch (e) {
         res.status(422).json({message: "Missing request parameters!"});
         console.log('REQUEST createUser: params are missing!')
+        client.release()
     }
 };
 module.exports.loginUser = loginUser
