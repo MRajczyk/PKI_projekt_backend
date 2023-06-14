@@ -44,7 +44,7 @@ async function validateEmailAccessibility(email) {
     const client = await pool.connect();
     const res = await client.query('select COUNT(email) from "users" where email=$1', [email])
     const isEmailAccessible = res.rows[0].count === '0';
-    client.end()
+    client.release()
     return isEmailAccessible
 }
 
@@ -61,7 +61,7 @@ async function createUser(req, res) {
             const client = await pool.connect();
             //all users are accepted for now, TODO: implement email-based account activation
             await client.query('insert into Users(username, password, email, role, accepted) values ($1, $2, $3, \'user\', true)', [req.body.username, bcrypt.hashSync(req.body.password, SALT_ROUNDS), req.body.email])
-            client.end()
+            client.release()
         } catch (e) {
             console.log(e)
             res.status(409).json({
@@ -81,41 +81,28 @@ module.exports.createUser = createUser
 
 const loginUser = async (req, res, next) => {
     try {
-        try {
-            const client = await pool.connect();
-            const {email, password} = req.body;
-            const result = await client.query('select id, email, password, accepted, role from "users" where email=$1', [email]);
-            if(result.rowCount > 0) {
-                const passwOk = bcrypt.compareSync(password, result.rows[0].password);
-                if(passwOk) {
-                    if(!result.rows[0].accepted) {
-                        res.status(403).json('Account is not verified!');
-                        client.release()
-                        return;
-                    }
-                    res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
+        const client = await pool.connect();
+        const {email, password} = req.body;
+        const result = await client.query('select id, email, password, accepted, role from "users" where email=$1', [email]);
+        if(result.rowCount > 0) {
+            const passwOk = bcrypt.compareSync(password, result.rows[0].password);
+            if(passwOk) {
+                if(!result.rows[0].accepted) {
                     client.release()
+                    return res.status(403).json('Account is not verified!');
                 }
-                else {
-                    res.status(401).json('Wrong credentials!');
-                    client.release()
-                }
-            }
-            else {
-                res.status(401).json('Wrong credentials!');
                 client.release()
+                return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
+            } else {
+                client.release()
+                return res.status(401).json('Wrong credentials!');
             }
-        } catch (e) {
-            console.log(e)
-            res.status(401).json({
-                message: "Wrong credentials!",
-            });
+        } else {
             client.release()
+            return res.status(401).json('Wrong credentials!');
         }
     } catch (e) {
-        res.status(422).json({message: "Missing request parameters!"});
-        console.log('REQUEST createUser: params are missing!')
-        client.release()
+        return res.status(422).json({message: "Missing request parameters!"});
     }
 };
 module.exports.loginUser = loginUser
@@ -173,15 +160,14 @@ const refreshTokenVerify = (req, res, next) => {
                     error: "User no longer exists in the database.",
                 });
             }
-            client.end()
+            client.release()
+            return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
         } catch (e) {
             console.log(e)
             res.status(401).json({
                 message: "Wrong credentials!",
             });
-            return;
         }
-        return res.json(Object.assign(generateTokens(req, userDoc), { 'roles': userDoc.roles }));
     });
 };
 module.exports.refreshTokenVerify = refreshTokenVerify
