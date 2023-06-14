@@ -15,7 +15,8 @@ const handleQuery = async (req, res, next) => {
     } catch (e) {
         console.log(e)
         res.status(409).json({
-            message: "Error occured while performing query",
+            error_message: e.message,
+            error: e,
         });
     }
 }

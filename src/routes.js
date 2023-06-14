@@ -21,7 +21,7 @@ router.post('/auth/refresh', auth.refreshTokenVerify);
 
 //secure router
 router.get('/users/all', auth.accessTokenVerify, getUsers)
-router.get('/query', auth.accessTokenVerify, handleQuery)
+router.post('/db/query', auth.accessTokenVerify, handleQuery)
 router.get('/db', auth.accessTokenVerify, database.getCurrentDatabase)
 router.get('/db/tables', auth.accessTokenVerify, database.getAllTables)
 router.get('/db/table/:tableName', auth.accessTokenVerify, database.getInfoAboutTable)
