@@ -10,8 +10,8 @@ const handleQuery = async (req, res, next) => {
     try {
         const client = await pool.connect();
         const result = await client.query(userQuery)
-        client.end()
-        res.status(200).json({result: result});
+        client.release()
+        return res.status(200).json({result: result});
     } catch (e) {
         console.log(e)
         res.status(409).json({

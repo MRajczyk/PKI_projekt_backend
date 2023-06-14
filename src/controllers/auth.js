@@ -83,22 +83,19 @@ const loginUser = async (req, res, next) => {
     try {
         const client = await pool.connect();
         const {email, password} = req.body;
-        const result = await client.query('select id, email, password, accepted, role from "users" where email=$1', [email]);
+        const result = await client.query('select id, email, username, password, accepted, role from "users" where email=$1', [email]);
+        client.release()
         if(result.rowCount > 0) {
             const passwOk = bcrypt.compareSync(password, result.rows[0].password);
             if(passwOk) {
                 if(!result.rows[0].accepted) {
-                    client.release()
                     return res.status(403).json('Account is not verified!');
                 }
-                client.release()
-                return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
+                return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role, 'username': result.rows[0].username }));
             } else {
-                client.release()
                 return res.status(401).json('Wrong credentials!');
             }
         } else {
-            client.release()
             return res.status(401).json('Wrong credentials!');
         }
     } catch (e) {
@@ -155,16 +152,16 @@ const refreshTokenVerify = (req, res, next) => {
         try {
             const client = await pool.connect();
             const result = await client.query('select id, email, password, accepted, role from "users" where id=$1', [payload.uid]);
+            client.release()
             if(result.rowCount === 0) {
                 return res.status(403).send({
                     error: "User no longer exists in the database.",
                 });
             }
-            client.release()
-            return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role }));
+            return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role,  'username': result.rows[0].username }));
         } catch (e) {
             console.log(e)
-            res.status(401).json({
+            return res.status(401).json({
                 message: "Wrong credentials!",
             });
         }

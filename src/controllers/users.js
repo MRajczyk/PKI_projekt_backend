@@ -14,7 +14,7 @@ const getUsers = async (req, res, next) => {
         const client = await pool.connect();
         const result = await client.query('select * from "users"')
         client.end()
-        res.status(200).json({users: result.rows});
+        return res.status(200).json({users: result.rows});
     } catch (e) {
         console.log(e)
         res.status(409).json({

@@ -7,7 +7,6 @@ const getCurrentDatabase = async (req, res) => {
         client.release()
         res.status(200).json(result.rows[0]);
     } catch (e) {
-        client.release()
         console.log(e)
         res.status(409).json({
             message: "Error occured while getting database name",
@@ -24,7 +23,6 @@ const getAllTables = async (req, res) => {
         client.release()
         res.status(200).json({tables: result.rows});
     } catch (e) {
-        client.release()
         console.log(e)
         res.status(409).json({
             message: "Error occured while getting database tables",
@@ -40,7 +38,6 @@ const getInfoAboutTable = async (req, res) => {
         client.release()
         res.status(200).json({columns: result.rows});
     } catch (e) {
-        client.release()
         console.log(e)
         res.status(409).json({
             message: "Error occured while getting database tables",
