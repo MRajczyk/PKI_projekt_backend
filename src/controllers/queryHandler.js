@@ -1,10 +1,10 @@
 const pool = require('./../util/db')
 
 const handleQuery = async (req, res, next) => {
-    const userQuery = req.query.query
+    const userQuery = req.body.query
     if(!userQuery) {
         res.status(422).json({message: "Missing request parameters!"});
-        console.log('REQUEST createUser: params are missing!')
+        console.log('REQUEST handleQuery: params are missing!')
         return;
     }
     try {

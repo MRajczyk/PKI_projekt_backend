@@ -17,13 +17,14 @@ router.get('/', (req, res) => {
 
 router.post('/register', auth.createUser)
 router.post('/login', auth.loginUser)
-router.post('/auth/refresh', auth.refreshTokenVerify);
+router.post('/refresh', auth.refreshTokenVerify);
 
 //secure router
 router.get('/users/all', auth.accessTokenVerify, getUsers)
-router.get('/db/query', auth.accessTokenVerify, handleQuery)
+router.post('/db/query', auth.accessTokenVerify, handleQuery)
 router.get('/db', auth.accessTokenVerify, database.getCurrentDatabase)
 router.get('/db/tables', auth.accessTokenVerify, database.getAllTables)
-router.get('/db/table/:tableName', auth.accessTokenVerify, database.getInfoAboutTable)
+router.get('/db/table/:tableName', auth.accessTokenVerify, database.getTable)
+router.get('/db/table_info/:tableName', auth.accessTokenVerify, database.getInfoAboutTable)
 
 module.exports = router

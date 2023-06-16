@@ -31,6 +31,21 @@ const getAllTables = async (req, res) => {
 }
 module.exports.getAllTables = getAllTables
 
+const getTable = async (req, res) => {
+    try {
+        const client = await pool.connect();
+        const result = await client.query(`SELECT * FROM ${req.params.tableName}`)
+        client.release()
+        res.status(200).json({rows: result.rows});
+    } catch (e) {
+        console.log(e)
+        res.status(409).json({
+            message: "Error occured while getting database tables",
+        });
+    }
+}
+module.exports.getTable = getTable
+
 const getInfoAboutTable = async (req, res) => {
     try {
         const client = await pool.connect();
