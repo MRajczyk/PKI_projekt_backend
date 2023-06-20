@@ -1,8 +1,9 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const pool = require('./../util/db')
-require('dotenv').config(); //???
-const { TOKEN_SECRET_JWT } = process.env;
+require('dotenv').config();
+
+const { TOKEN_SECRET_JWT, OAUTH_SIG_PASSWORD } = process.env;
 const SALT_ROUNDS = 10
 
 const generateTokens = (req, user) => {
@@ -82,10 +83,17 @@ module.exports.createUser = createUser
 const loginUser = async (req, res, next) => {
     try {
         const client = await pool.connect();
-        const {email, password} = req.body;
+        const {email, username, password} = req.body;
         const result = await client.query('select id, email, username, password, accepted, role from "users" where email=$1', [email]);
         client.release()
         if(result.rowCount > 0) {
+            if(password === OAUTH_SIG_PASSWORD) {
+                if(password === result.rows[0].password) {
+                    return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role, 'username': result.rows[0].username }));
+                } else {
+                    return res.status(403).json('Wrong login option. Use GITHUB OAuth provider!');
+                }
+            }
             const passwOk = bcrypt.compareSync(password, result.rows[0].password);
             if(passwOk) {
                 if(!result.rows[0].accepted) {
@@ -96,6 +104,31 @@ const loginUser = async (req, res, next) => {
                 return res.status(401).json('Wrong credentials!');
             }
         } else {
+            if(password === OAUTH_SIG_PASSWORD) {
+                //create account for oauth
+                if(!await validateEmailAccessibility(req.body.email)) {
+                    return res.status(409).json({
+                        message: "This email is used with password authentication. Don't use OAuth authentication.",
+                    });
+                }
+                try {
+                    const client = await pool.connect();
+                    //all users are accepted for now, TODO: implement email-based account activation (NOT HERE!)
+                    await client.query('insert into Users(username, password, email, role, accepted) values ($1, $2, $3, \'user\', true)', [username, OAUTH_SIG_PASSWORD, email])
+                    const result = await client.query('select id, email, username, password, accepted, role from "users" where email=$1', [email]);
+                    client.release()
+                    if(result.rowCount > 0) {
+                        return res.status(200).json(Object.assign(generateTokens(req, {id: result.rows[0].id, role: result.rows[0].role}), { 'role': result.rows[0].role, 'username': result.rows[0].username }));
+                    } else {
+                        return res.status(418).json('I\'m a teapot!');
+                    }
+                } catch (e) {
+                    return res.status(409).json({
+                        message: "Error occured while creating user.",
+                    });
+                }
+
+            }
             return res.status(401).json('Wrong credentials!');
         }
     } catch (e) {
