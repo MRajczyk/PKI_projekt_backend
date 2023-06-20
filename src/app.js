@@ -38,7 +38,7 @@ async function superUserInit() {
   try {
     const res = await client.query('select COUNT(email) from "users" where email=\'admin@admin\' and username=\'admin\'');
     if(res.rows[0].count === '0') {
-      await client.query('insert into Users(username, password, email, role, accepted) values ($1, $2, $3, \'admin\', true)', ['admin', bcrypt.hashSync(ADMIN_DEFAULT_PASSWORD, SALT_ROUNDS), 'admin@admin'])
+      await client.query('insert into Users(username, password, email, role, accepted, activation_token) values ($1, $2, $3, \'admin\', true, $4)', ['admin', bcrypt.hashSync(ADMIN_DEFAULT_PASSWORD, SALT_ROUNDS), 'admin@admin', 'admin_no_token'])
       console.log('created admin with default password');
     }
   }

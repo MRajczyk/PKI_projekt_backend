@@ -23,6 +23,7 @@ router.get('/', (req, res) => {
 router.post('/register', auth.createUser)
 router.post('/login', auth.loginUser)
 router.post('/refresh', auth.refreshTokenVerify);
+router.get('/confirm/:confirmationCode', auth.verifyUser);
 
 //secure router
 router.get('/users/all', auth.accessTokenVerify, getUsers)

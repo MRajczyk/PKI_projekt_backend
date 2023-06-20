@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const pool = require('./../util/db')
+const nodemailer = require('./../util/confirmationMailSender')
 require('dotenv').config();
 
 const { TOKEN_SECRET_JWT, OAUTH_SIG_PASSWORD } = process.env;
@@ -51,34 +52,63 @@ async function validateEmailAccessibility(email) {
 
 async function createUser(req, res) {
     try {
-        if(!await validateEmailAccessibility(req.body.email)) {
-            console.log('REQUEST createUser: email is taken!', req.body.email)
-            res.status(409).json({
-                message: "Email is taken.",
+        const {email, username, password} = req.body;
+        if(email === "" || username === "" || password === "") {
+            console.log('REQUEST createUser: params are missing!')
+            return res.status(422).json({message: "Missing request parameters!"});
+        }
+        if(!await validateEmailAccessibility(email)) {
+            console.log('REQUEST createUser: email is taken!', email)
+            return res.status(409).json({
+                message: "Register failed. Email is taken.",
             });
-            return;
         }
         try {
             const client = await pool.connect();
-            //all users are accepted for now, TODO: implement email-based account activation
-            await client.query('insert into Users(username, password, email, role, accepted) values ($1, $2, $3, \'user\', true)', [req.body.username, bcrypt.hashSync(req.body.password, SALT_ROUNDS), req.body.email])
+            const token = jwt.sign({email: email}, TOKEN_SECRET_JWT)
+            await client.query('insert into users(username, password, email, role, accepted, activation_token) values ($1, $2, $3, \'user\', false, $4)', [username, bcrypt.hashSync(password, SALT_ROUNDS), email, token])
             client.release()
+            nodemailer.sendConfirmationEmail(username, email, token)
+            return res.status(200).json({
+                message: "The user was created. Check your email to activate an account!",
+            });
         } catch (e) {
             console.log(e)
-            res.status(409).json({
-                message: "Error occured while creating user.",
+            return res.status(409).json({
+                message: "Register failed. Error occured while creating user.",
             });
-            return;
         }
-        res.status(200).json({
-            message: "The user was created.",
-        });
     } catch (e) {
-        res.status(422).json({message: "Missing request parameters!"});
         console.log('REQUEST createUser: params are missing!')
+        return res.status(422).json({message: "Register failed. Missing request parameters!"});
     }
 }
 module.exports.createUser = createUser
+
+async function verifyUser(req, res) {
+    const client = await pool.connect();
+    try {
+        const confirmationCode = req.params.confirmationCode;
+        if(!confirmationCode) {
+            return res.status(404).send({ message: "Token not present" });
+        }
+        const result = await client.query('select id, email, username, password, accepted, role, activation_token from "users" where activation_token=$1', [confirmationCode]);
+        console.log(result)
+        if(result.rowCount > 0) {
+            console.log(result)
+            await client.query('update users set accepted = \'true\' where id=$1', [result.rows[0].id]);
+            client.release()
+
+            return res.status(200).json({message: "Verification successful!"});
+        } else {
+            return res.status(404).json({message: 'User not found'});
+        }
+    } catch (e) {
+        client.release()
+        return res.status(500).json({message: 'Error occured'});
+    }
+}
+module.exports.verifyUser = verifyUser
 
 const loginUser = async (req, res, next) => {
     try {
@@ -113,8 +143,7 @@ const loginUser = async (req, res, next) => {
                 }
                 try {
                     const client = await pool.connect();
-                    //all users are accepted for now, TODO: implement email-based account activation (NOT HERE!)
-                    await client.query('insert into Users(username, password, email, role, accepted) values ($1, $2, $3, \'user\', true)', [username, OAUTH_SIG_PASSWORD, email])
+                    await client.query('insert into Users(username, password, email, role, accepted, activation_token) values ($1, $2, $3, \'user\', true, $4)', [username, OAUTH_SIG_PASSWORD, email, 'oauth_no_token'])
                     const result = await client.query('select id, email, username, password, accepted, role from "users" where email=$1', [email]);
                     client.release()
                     if(result.rowCount > 0) {
@@ -181,7 +210,6 @@ const refreshTokenVerify = (req, res, next) => {
                 error: "Token refresh is invalid",
             });
         }
-
         try {
             const client = await pool.connect();
             const result = await client.query('select id, email, password, accepted, role from "users" where id=$1', [payload.uid]);
